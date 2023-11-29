@@ -1,2 +1,3 @@
 target/
 .ruff_cache/
+**/test

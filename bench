@@ -4,11 +4,14 @@ import subprocess
 import os
 
 def build(path):
+    if path.startswith("python"):
+        return f"{path}/test.py"
+    if path.startswith("c"):
+        subprocess.run(["gcc", "test.c", "-o", "test", "-O2"], cwd=path)
+        return f"{path}/test"
     if path.startswith("rust"):
         subprocess.run(["cargo", "build", "--release"], cwd=path)
         return f"{path}/target/release/test"
-    if path.startswith("python"):
-        return f"{path}/test.py"
     raise Exception(f"Not supported path: {path}")
 
 def bench(paths):

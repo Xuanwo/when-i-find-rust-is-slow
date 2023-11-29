@@ -1,4 +1,3 @@
-# Please install bcc and bcc-python first
 from bcc import BPF
 import time
 import argparse
@@ -31,30 +30,32 @@ static __always_inline int matchPrefix(const char *cs, const char *ct, int size)
      return 0;
 }
 
-int trace_openat_entry(struct pt_regs *ctx, int dfd, const char __user *filename, int flags, umode_t mode) {
+TRACEPOINT_PROBE(syscalls, sys_enter_openat) {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     u32 tid = bpf_get_current_pid_tgid();
+    char *filename = args->filename;
     if (matchPrefix(filename, "/tmp/file", sizeof(filename)) != 0) {
         return 0;
     }
-    fd_info.update(&tid, &dfd);
+    int fd=0;
+    fd_info.update(&tid, &fd);
 
     return 0;
 }
 
-int trace_openat_return(struct pt_regs *ctx) {
+TRACEPOINT_PROBE(syscalls, sys_exit_openat) {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     u32 tid = bpf_get_current_pid_tgid();
     int *dfd = fd_info.lookup(&tid);
     if (dfd == NULL) {
         return 0;
     }
-    int ret = PT_REGS_RC(ctx);
-    fd_info.update(&tid, &ret);
+    int fd = args->ret;
+    fd_info.update(&tid, &fd);
     return 0;
 }
 
-int trace_read_entry(struct pt_regs *ctx, int fd, char __user *buf, size_t count) {
+TRACEPOINT_PROBE(syscalls, sys_enter_read) {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     u32 tid = bpf_get_current_pid_tgid();
     int *dfd = fd_info.lookup(&tid);
@@ -62,7 +63,7 @@ int trace_read_entry(struct pt_regs *ctx, int fd, char __user *buf, size_t count
         return 0;
     }
 
-    if (*dfd != fd) {
+    if (*dfd != args->fd) {
         return 0;
     }
     u64 ts = bpf_ktime_get_ns();
@@ -71,7 +72,7 @@ int trace_read_entry(struct pt_regs *ctx, int fd, char __user *buf, size_t count
     return 0;
 }
 
-int trace_read_return(struct pt_regs *ctx, int ret) {
+TRACEPOINT_PROBE(syscalls, sys_exit_read) {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     u32 tid = bpf_get_current_pid_tgid();
     u64 *ts = action_info.lookup(&tid);
@@ -92,10 +93,6 @@ int trace_read_return(struct pt_regs *ctx, int ret) {
 
 bpf = BPF(text=bpf_text)
 
-bpf.attach_kprobe(event="do_sys_openat2", fn_name="trace_openat_entry")
-bpf.attach_kretprobe(event="do_sys_openat2", fn_name="trace_openat_return")
-bpf.attach_kprobe(event="ksys_read", fn_name="trace_read_entry")
-bpf.attach_kretprobe(event="ksys_read", fn_name="trace_read_return")
 
 def process_event_data(cpu, data, size):
     event = bpf["events"].event(data)

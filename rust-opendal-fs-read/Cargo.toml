@@ -1,0 +1,7 @@
+[package]
+name = "test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+opendal = { version = "0.42", default-features = false, features = ["services-fs"] }

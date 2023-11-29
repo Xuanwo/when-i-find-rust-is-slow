@@ -7,7 +7,7 @@ It's crazy, I found a case where Rust is slower than Python! But, really?
 Reproduce the same result requires:
 
 - Rust Development Tools (cargo, rustc, ..)
-- Python Development Tools (python3)
+- Python Development Tools (python3, venv)
 - hyperfine (benchmark runner)
 - CPU (one of `AMD Ryzen 9 5950X`, `AMD R7 5700X`, `AMD Ryzen 9 5900X`)
 

@@ -34,7 +34,7 @@ static __always_inline int matchPrefix(const char *cs, const char *ct, int size)
 int trace_openat_entry(struct pt_regs *ctx, int dfd, const char __user *filename, int flags, umode_t mode) {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     u32 tid = bpf_get_current_pid_tgid();
-    if (matchPrefix(filename, "/tmp/demofile2", sizeof(filename)) != 0) {
+    if (matchPrefix(filename, "/tmp/file", sizeof(filename)) != 0) {
         return 0;
     }
     fd_info.update(&tid, &dfd);
